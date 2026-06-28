@@ -1,26 +1,26 @@
+import { useState } from "react";
 import { Button } from "@passhub/ui";
+import { useAuth } from "@/auth/useAuth";
 
 export function LoginPage() {
+  const { loginWithGoogle } = useAuth();
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  const handleGoogleLogin = async () => {
+    setIsRedirecting(true);
+    try {
+      await loginWithGoogle();
+    } catch {
+      setIsRedirecting(false);
+    }
+  };
+
   return (
-    <form className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">Sign in</h1>
-      <label className="flex flex-col gap-1 text-sm">
-        Email
-        <input
-          type="email"
-          name="email"
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
-        />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        Password
-        <input
-          type="password"
-          name="password"
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
-        />
-      </label>
-      <Button type="submit">Sign in</Button>
-    </form>
+    <div className="flex flex-col gap-4">
+      <h1 className="text-xl font-semibold">Sign in to PassHub</h1>
+      <Button type="button" onClick={handleGoogleLogin} disabled={isRedirecting}>
+        {isRedirecting ? "Redirecting…" : "Continue with Google"}
+      </Button>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from functools import lru_cache
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 T = TypeVar("T")
 
@@ -25,7 +25,7 @@ class Container:
             factory = self._bindings[port]
         except KeyError as exc:
             raise LookupError(f"No binding registered for {port!r}") from exc
-        return factory()
+        return cast(T, factory())
 
 
 @lru_cache

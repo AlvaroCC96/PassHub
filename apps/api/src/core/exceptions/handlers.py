@@ -8,7 +8,9 @@ from src.core.logging import get_logger
 logger = get_logger(__name__)
 
 
-def _error_response(status_code: int, error_code: str, message: str, request: Request) -> JSONResponse:
+def _error_response(
+    status_code: int, error_code: str, message: str, request: Request
+) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,
         content={
@@ -39,5 +41,8 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
         logger.exception("unhandled_exception")
         return _error_response(
-            status.HTTP_500_INTERNAL_SERVER_ERROR, "internal_error", "Internal server error", request
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "internal_error",
+            "Internal server error",
+            request,
         )

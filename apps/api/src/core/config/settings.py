@@ -37,10 +37,11 @@ class SecuritySettings(BaseSettings):
 
     jwt_secret: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
-    jwt_access_token_expire_minutes: int = 30
-    jwt_refresh_token_expire_minutes: int = 60 * 24 * 7
+    jwt_access_token_expire_minutes: int = 15
+    jwt_refresh_token_expire_minutes: int = 60 * 24 * 30
     google_oauth_client_id: str | None = None
     google_oauth_client_secret: str | None = None
+    google_oauth_redirect_uri: str = "http://localhost:8000/api/v1/auth/callback"
 
 
 class ObservabilitySettings(BaseSettings):
@@ -63,6 +64,7 @@ class Settings(BaseSettings):
     debug: bool = True
     api_v1_prefix: str = "/api/v1"
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    frontend_url: str = "http://localhost:5173"
     log_level: str = "INFO"
     log_json: bool = False
 

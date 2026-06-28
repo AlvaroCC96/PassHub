@@ -54,7 +54,11 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
+      # .env.development holds non-secret defaults and is committed; .env is
+      # gitignored and, if present, overrides it with real local secrets
+      # (e.g. Google OAuth client credentials).
       - .env.development
+      - .env
     ports:
       - "8000:8000"
     volumes:

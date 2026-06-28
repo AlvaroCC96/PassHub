@@ -1,4 +1,5 @@
 import type { ApiError } from "@passhub/shared";
+import { getAccessToken } from "@/lib/auth-token-store";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
@@ -12,9 +13,19 @@ export class ApiRequestError extends Error {
   }
 }
 
+/** Every request sends cookies (`credentials: "include"`) so the refresh-token
+ * and CSRF cookies reach the API even though frontend and backend are
+ * different origins in development. The access token, if present, is
+ * attached from in-memory state — it is never read from any storage API. */
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const accessToken = getAccessToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...init?.headers,
+    },
     ...init,
   });
 
@@ -27,5 +38,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     );
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
   return response.json() as Promise<T>;
 }

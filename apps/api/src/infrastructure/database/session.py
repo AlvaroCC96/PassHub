@@ -2,7 +2,12 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from functools import lru_cache
 
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from src.core.config import get_settings
 
@@ -27,6 +32,5 @@ async def get_db_session() -> AsyncGenerator[AsyncSession]:
 @asynccontextmanager
 async def session_scope() -> AsyncGenerator[AsyncSession]:
     """Context manager for use outside of request scope (scripts, workers)."""
-    async with get_session_factory()() as session:
-        async with session.begin():
-            yield session
+    async with get_session_factory()() as session, session.begin():
+        yield session
