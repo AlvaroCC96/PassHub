@@ -1,0 +1,97 @@
+name: passhub
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-passhub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-passhub}
+      POSTGRES_DB: ${POSTGRES_DB:-passhub}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-passhub}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-passhub}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-passhub123}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@passhub.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.development
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./apps/api:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command: ["uv", "run", "uvicorn", "src.presentation.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: dev
+    restart: unless-stopped
+    env_file:
+      - .env.development
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./apps/web:/app/apps/web
+      - ./packages:/app/packages
+      # Named volumes shadow each node_modules dir so the Linux-built native
+      # binaries (esbuild, etc.) aren't overwritten by the host's bind mount.
+      - web_node_modules:/app/node_modules
+      - web_app_node_modules:/app/apps/web/node_modules
+      - web_shared_node_modules:/app/packages/shared/node_modules
+      - web_ui_node_modules:/app/packages/ui/node_modules
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  minio_data:
+  web_node_modules:
+  web_app_node_modules:
+  web_shared_node_modules:
+  web_ui_node_modules:

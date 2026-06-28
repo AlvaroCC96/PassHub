@@ -1,0 +1,36 @@
+.web-base:
+  image: node:20-slim
+  before_script:
+    - corepack enable
+    - pnpm install --frozen-lockfile
+
+web:lint:
+  extends: .web-base
+  stage: lint
+  script:
+    - pnpm --filter @passhub/web lint
+    - pnpm --filter @passhub/web typecheck
+  rules:
+    - changes:
+        - apps/web/**/*
+        - packages/**/*
+
+web:test:
+  extends: .web-base
+  stage: test
+  script:
+    - pnpm --filter @passhub/web test
+  rules:
+    - changes:
+        - apps/web/**/*
+        - packages/**/*
+
+web:build:
+  extends: .web-base
+  stage: build
+  script:
+    - pnpm --filter @passhub/web build
+  rules:
+    - changes:
+        - apps/web/**/*
+        - packages/**/*

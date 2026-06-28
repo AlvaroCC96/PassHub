@@ -1,0 +1,17 @@
+{
+  "name": "passhub",
+  "private": true,
+  "version": "0.1.0",
+  "description": "PassHub — multi-module SaaS platform monorepo",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev:web": "pnpm --filter @passhub/web dev",
+    "build:web": "pnpm --filter @passhub/web build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test:web": "pnpm --filter @passhub/web test"
+  },
+  "packageManager": "pnpm@9.12.0"
+}

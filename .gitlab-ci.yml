@@ -1,0 +1,14 @@
+stages:
+  - lint
+  - test
+  - build
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+include:
+  - local: infra/ci/api.yml
+  - local: infra/ci/web.yml
+
+# Deployment stages (Cloud Run, Cloud SQL migrations, etc.) are intentionally
+# not defined yet — Sprint 0 only prepares lint/test/build.
