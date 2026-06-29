@@ -17,7 +17,7 @@ export function AuthCallbackPage() {
     hasRun.current = true;
 
     void restoreSession().then((success) => {
-      navigate(success ? "/dashboard" : "/login", { replace: true });
+      navigate(success ? "/app" : "/login", { replace: true });
     });
   }, [restoreSession, navigate]);
 

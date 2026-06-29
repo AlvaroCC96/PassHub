@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from src.application.ports import Hasher, TokenService
+from src.application.ports import Hasher, NewUserProvisioner, TokenService
 from src.core.config import Settings
 from src.core.exceptions import UnauthorizedError
 from src.core.logging import get_logger
@@ -37,6 +37,7 @@ class LoginWithGoogleUseCase:
         token_service: TokenService,
         hasher: Hasher,
         settings: Settings,
+        new_user_provisioner: NewUserProvisioner,
     ) -> None:
         self._oauth_provider = oauth_provider
         self._user_repository = user_repository
@@ -44,6 +45,7 @@ class LoginWithGoogleUseCase:
         self._token_service = token_service
         self._hasher = hasher
         self._settings = settings
+        self._new_user_provisioner = new_user_provisioner
 
     async def execute(self, *, code: str) -> LoginWithGoogleResult:
         try:
@@ -71,6 +73,7 @@ class LoginWithGoogleUseCase:
                 provider_subject_id=profile.provider_subject_id,
             )
             await self._user_repository.add(user)
+            await self._new_user_provisioner.on_user_registered(user_id=user.id)
             logger.info("user_registered", category="identity.audit", user_id=str(user.id))
         else:
             user.update_profile(full_name=profile.full_name, avatar_url=profile.avatar_url)

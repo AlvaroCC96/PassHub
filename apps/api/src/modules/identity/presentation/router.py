@@ -38,6 +38,9 @@ from src.modules.identity.presentation.schemas import (
     CurrentUserResponse,
     LoginInitiateResponse,
 )
+from src.modules.platform.application.services import UserModuleService
+from src.modules.platform.infrastructure.user_provisioner import PlatformUserProvisioner
+from src.modules.platform.presentation.dependencies import get_user_module_service
 
 router = APIRouter()
 
@@ -70,6 +73,7 @@ async def callback(
     hasher: Hasher = Depends(get_hasher),
     user_repository: UserRepository = Depends(get_user_repository),
     refresh_token_repository: RefreshTokenRepository = Depends(get_refresh_token_repository),
+    user_module_service: UserModuleService = Depends(get_user_module_service),
     session: AsyncSession = Depends(get_db_session),
 ) -> RedirectResponse:
     """Google redirects the browser here after the user grants consent. This
@@ -93,6 +97,9 @@ async def callback(
         token_service=token_service,
         hasher=hasher,
         settings=settings,
+        # The only seam between Identity and Platform: Identity depends on
+        # the `NewUserProvisioner` port, Platform supplies this adapter.
+        new_user_provisioner=PlatformUserProvisioner(user_module_service),
     )
     result = await use_case.execute(code=code)
     await session.commit()

@@ -1,4 +1,4 @@
-.PHONY: up down logs build api-shell web-shell migrate revision lint format typecheck test pre-commit-install
+.PHONY: up down logs build api-shell web-shell migrate revision seed lint format typecheck test pre-commit-install
 
 up:
 	docker compose up --build
@@ -23,6 +23,9 @@ migrate:
 
 revision:
 	docker compose exec api uv run alembic revision --autogenerate -m "$(name)"
+
+seed:
+	docker compose exec api uv run python -m src.modules.platform.infrastructure.seed
 
 lint:
 	docker compose exec api uv run ruff check src tests

@@ -1,12 +1,14 @@
 # PassHub
 
-PassHub is a multi-module SaaS platform. **DrivePass**, the first module,
-lets users store vehicle documentation, grant access via NFC, and extract
-document data with AI. This repository currently contains **Sprint 0**: the
-platform scaffold, with no business logic implemented yet.
+PassHub is a multi-module SaaS platform. The **Platform Core** (Identity,
+modules, feature flags, settings) is the product — **DrivePass** is its first
+business module, not the whole system. Future modules (HomePass, PetPass,
+HealthPass, FamilyPass) plug into the same core without it knowing anything
+about vehicles, pets, or houses.
 
-See [docs/architecture.md](docs/architecture.md) for the architectural
-decisions and their justification.
+See [docs/architecture.md](docs/architecture.md) for the Sprint 0 scaffold
+rationale and [docs/platform-core.md](docs/platform-core.md) for how modules,
+per-user enablement, and feature flags fit together.
 
 ## Requirements
 
@@ -15,12 +17,17 @@ decisions and their justification.
   linting/typechecking outside containers)
 - Python 3.13 and [uv](https://docs.astral.sh/uv/) (only needed for running
   the API outside containers)
+- A Google OAuth 2.0 client (Web application) if you want to exercise login —
+  see [docs/platform-core.md](docs/platform-core.md#local-google-oauth-setup)
 
 ## Getting started
 
 ```bash
 cp .env.example .env
+# fill in SECURITY_GOOGLE_OAUTH_CLIENT_ID / SECURITY_GOOGLE_OAUTH_CLIENT_SECRET in .env
 docker compose up --build
+make migrate
+make seed
 ```
 
 Or, with the bootstrap script (copies `.env`, installs frontend deps, starts
@@ -33,25 +40,37 @@ containers):
 
 Once running:
 
-| Service       | URL                                 |
-|---------------|--------------------------------------|
-| Web           | http://localhost:5173               |
-| API docs      | http://localhost:8000/api/v1/docs   |
-| API health    | http://localhost:8000/api/v1/health |
-| MinIO console | http://localhost:9001               |
-| PgAdmin       | http://localhost:5050               |
+| Service       | URL                                  |
+| ------------- | ------------------------------------- |
+| Web           | http://localhost:5173                |
+| API docs      | http://localhost:8000/api/v1/docs    |
+| API health    | http://localhost:8000/api/v1/health  |
+| MinIO console | http://localhost:9001                |
+| PgAdmin       | http://localhost:5050                |
+
+Sign in at `/login` ("Continue with Google") and you'll land on `/app`, the
+platform dashboard — DrivePass is enabled by default for every new account
+and opens a placeholder at `/app/drive`.
 
 ## Architecture
 
-Monorepo, Clean Architecture on the backend, ports & adapters for storage,
-auth, and (later) notifications/AI. Full rationale in
-[docs/architecture.md](docs/architecture.md).
+Monorepo, Clean Architecture on the backend (`core`/`domain`/`application`/
+`infrastructure`/`presentation`), ports & adapters for storage, auth, and
+module enablement. Full rationale in [docs/architecture.md](docs/architecture.md).
 
 ```
 PassHub/
   apps/
     web/        React + TypeScript + Vite + TailwindCSS frontend
-    api/        FastAPI backend (Clean Architecture: core/domain/application/infrastructure/presentation)
+    api/        FastAPI backend
+      src/
+        core/                  config, logging, DI, exceptions, middleware
+        domain/, application/  shared-kernel domain primitives and ports
+        infrastructure/        JWT, Argon2, MinIO/GCS, DB session & mixins
+        modules/
+          identity/            Google login, JWT sessions, refresh tokens
+          platform/            module catalog, per-user enablement, feature flags, settings
+          README.md            how a future business module (drivepass/...) plugs in
   packages/
     shared/     TypeScript types shared across frontend apps
     ui/         Shared React UI primitives
@@ -59,7 +78,7 @@ PassHub/
     docker/     nginx, postgres init scripts
     ci/         GitLab CI job definitions
     gcp/        Future Terraform for Cloud Run/SQL/Storage
-  docs/         Architecture documentation
+  docs/         Architecture and platform documentation
   scripts/      Bootstrap and maintenance scripts
 ```
 
@@ -82,6 +101,7 @@ make down                # docker compose down
 make logs                # follow container logs
 make migrate             # apply Alembic migrations
 make revision name="..." # generate a new Alembic migration
+make seed                # idempotent platform seed (modules, feature flags, settings)
 make lint                # ruff + eslint
 make format               # ruff format + black
 make typecheck            # mypy + tsc
@@ -91,19 +111,25 @@ make pre-commit-install   # install git hooks
 
 ## Testing
 
-Test runners are configured, not yet exercised with business-logic tests:
-
-- **pytest** + **pytest-asyncio** for the API (`apps/api/tests`)
-- **Vitest** + **React Testing Library** for the frontend (`apps/web/src`)
-- **Playwright** scaffolding for end-to-end tests (`e2e/`)
+- **pytest** for the API (`apps/api/tests`) — unit tests for `UserModuleService`
+  business rules (enable/disable, COMING_SOON rejection, no duplicates, default
+  module on signup) plus the Sprint 0 health-check integration test
+- **Vitest** + **React Testing Library** for the frontend (`apps/web/src`) —
+  `ModuleCard` and the DrivePass placeholder page
+- **Playwright** scaffolding for end-to-end tests (`e2e/`), not yet written
 
 ## Roadmap
 
-- **Sprint 0 (this repository)** — monorepo, Clean Architecture skeleton,
-  Docker Compose stack, CI structure, no business logic
-- **Sprint 1** — Authentication (JWT + Google OAuth), RBAC enforcement
+- **Sprint 0** — monorepo, Clean Architecture skeleton, Docker Compose stack,
+  CI structure, no business logic
+- **Sprint 1** — Identity: Google OAuth login, JWT access tokens, rotated
+  refresh tokens, basic dashboard
+- **Sprint 1.5 (this repository)** — Platform Core: module catalog, per-user
+  module enablement, feature flags, platform settings, DrivePass shown as a
+  module (not the app), HomePass/PetPass/HealthPass/FamilyPass as
+  coming-soon placeholders
 - **Sprint 2** — DrivePass: vehicles, document upload/storage
 - **Sprint 3** — NFC-based access to vehicle documentation
 - **Sprint 4** — AI-powered document data extraction
 - **Future modules** — HomePass, PetPass, FamilyPass, HealthPass, built on
-  the same shared kernel
+  the same Platform Core
