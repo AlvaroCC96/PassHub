@@ -19,10 +19,14 @@ export class ApiRequestError extends Error {
  * attached from in-memory state — it is never read from any storage API. */
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const accessToken = getAccessToken();
+  // FormData (file uploads) must NOT get an explicit Content-Type — the
+  // browser sets one with the correct multipart boundary itself. Forcing
+  // application/json here would silently strip that boundary.
+  const isFormData = init?.body instanceof FormData;
   const response = await fetch(`${API_BASE_URL}${path}`, {
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...init?.headers,
     },

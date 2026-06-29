@@ -1,0 +1,16 @@
+from typing import Protocol
+from uuid import UUID
+
+from src.modules.drivepass.documents.domain.entities import DocumentVersion
+
+
+class DocumentVersionRepository(Protocol):
+    async def get_by_id(self, version_id: UUID) -> DocumentVersion | None: ...
+
+    async def list_for_document(self, document_id: UUID) -> list[DocumentVersion]: ...
+
+    async def count_for_document(self, document_id: UUID) -> int: ...
+
+    async def add(self, version: DocumentVersion) -> None: ...
+
+    async def mark_all_not_current(self, document_id: UUID) -> None: ...

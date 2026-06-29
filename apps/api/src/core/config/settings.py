@@ -24,12 +24,29 @@ class StorageSettings(BaseSettings):
 
     provider: Literal["minio", "gcs"] = "minio"
     endpoint: str = "localhost:9000"
+    #: The endpoint signed URLs are generated against. Inside Docker, the API
+    #: talks to MinIO via the service name (`minio:9000`) — but that hostname
+    #: is meaningless to a browser, which needs the host-mapped port instead.
+    #: Defaults to `endpoint` so single-endpoint setups (and GCS) don't need
+    #: to set this at all.
+    public_endpoint: str | None = None
     access_key: str = "passhub"
     secret_key: str = "passhub123"
     bucket: str = "passhub-documents"
     secure: bool = False
+    #: Pinned explicitly so the MinIO SDK never makes a live "get bucket
+    #: region" call before signing a URL — that call would go out over
+    #: `endpoint`, which the client generating a *public* presigned URL may
+    #: not even be able to reach (e.g. `localhost:9000` from inside a
+    #: container). With the region already known, signing is pure local
+    #: cryptography, no network round-trip required.
+    region: str = "us-east-1"
     gcs_project_id: str | None = None
     gcs_bucket: str | None = None
+
+    @property
+    def resolved_public_endpoint(self) -> str:
+        return self.public_endpoint or self.endpoint
 
 
 class SecuritySettings(BaseSettings):

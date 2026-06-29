@@ -8,9 +8,11 @@ about vehicles, pets, or houses.
 
 See [docs/architecture.md](docs/architecture.md) for the Sprint 0 scaffold
 rationale, [docs/platform-core.md](docs/platform-core.md) for how modules,
-per-user enablement, and feature flags fit together, and
+per-user enablement, and feature flags fit together,
 [docs/drivepass-vehicles.md](docs/drivepass-vehicles.md) for DrivePass's
-vehicle management.
+vehicle management, and
+[docs/drivepass-documents.md](docs/drivepass-documents.md) for DrivePass's
+document management.
 
 ## Requirements
 
@@ -52,7 +54,9 @@ Once running:
 
 Sign in at `/login` ("Continue with Google") and you'll land on `/app`, the
 platform dashboard — DrivePass is enabled by default for every new account.
-Open it at `/app/drive` to register, edit, favorite, and remove vehicles.
+Open it at `/app/drive` to register, edit, favorite, and remove vehicles, and
+open a vehicle's "Documents" page to upload, replace, view, and remove its
+required/optional documents.
 
 ## Architecture
 
@@ -74,6 +78,7 @@ PassHub/
           platform/            module catalog, per-user enablement, feature flags, settings
           drivepass/
             vehicles/          vehicle CRUD, ownership, favorite, plate uniqueness
+            documents/         file upload/versioning via StorageProvider, status, signed URLs
           README.md            how a future business module (drivepass/...) plugs in
   packages/
     shared/     TypeScript types shared across frontend apps
@@ -117,11 +122,15 @@ make pre-commit-install   # install git hooks
 
 - **pytest** for the API (`apps/api/tests`) — unit tests for `UserModuleService`
   (enable/disable, COMING_SOON rejection, no duplicates, default module on
-  signup) and `VehicleService` (CRUD, ownership, plate uniqueness/reuse,
-  favorite invariant) plus the Sprint 0 health-check integration test
+  signup), `VehicleService` (CRUD, ownership, plate uniqueness/reuse,
+  favorite invariant), and `VehicleDocumentService` (checklist
+  initialization, upload, rejected uploads, status derivation, conditional
+  homologation requirement, versioning, signed URLs, soft delete/recreate)
+  plus the Sprint 0 health-check integration test
 - **Vitest** + **React Testing Library** for the frontend (`apps/web/src`) —
-  `ModuleCard`, `VehicleCard`, `VehicleForm`, `VehicleListPage`, and the
-  DrivePass hub page
+  `ModuleCard`, `VehicleCard`, `VehicleForm`, `VehicleListPage`, the
+  DrivePass hub page, and `DocumentList`/`DocumentCard`/`EmptyDocumentsState`/
+  `DocumentUploadModal`
 - **Playwright** scaffolding for end-to-end tests (`e2e/`), not yet written
 
 ## Roadmap

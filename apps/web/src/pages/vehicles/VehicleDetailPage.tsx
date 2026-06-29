@@ -41,6 +41,12 @@ export function VehicleDetailPage() {
 
       <div className="mt-8 flex gap-3">
         <Link
+          to={`/app/drive/vehicles/${vehicle.id}/documents`}
+          className="inline-flex items-center justify-center rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+        >
+          Documents
+        </Link>
+        <Link
           to={`/app/drive/vehicles/${vehicle.id}/edit`}
           className="inline-flex items-center justify-center rounded-md bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
         >

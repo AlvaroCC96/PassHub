@@ -22,6 +22,20 @@ class MinIOStorageProvider(StorageProvider):
             access_key=settings.storage.access_key,
             secret_key=settings.storage.secret_key,
             secure=settings.storage.secure,
+            region=settings.storage.region,
+        )
+        # Presigned URLs are handed to a browser, which can't resolve the
+        # internal Docker service name `endpoint` points at — only the
+        # host-mapped `public_endpoint`. Same credentials, same bucket,
+        # different hostname baked into the signature. `region` is pinned on
+        # both clients so signing never tries to reach MinIO over the network
+        # to ask for it first — see `StorageSettings.region`.
+        self._public_client = Minio(
+            settings.storage.resolved_public_endpoint,
+            access_key=settings.storage.access_key,
+            secret_key=settings.storage.secret_key,
+            secure=settings.storage.secure,
+            region=settings.storage.region,
         )
 
     def _ensure_bucket(self, bucket: str) -> None:
@@ -57,6 +71,6 @@ class MinIOStorageProvider(StorageProvider):
     async def get_presigned_url(
         self, *, key: str, bucket: str | None = None, expires_in_seconds: int = 3600
     ) -> str:
-        return self._client.presigned_get_object(
+        return self._public_client.presigned_get_object(
             bucket or self._default_bucket, key, expires=timedelta(seconds=expires_in_seconds)
         )
