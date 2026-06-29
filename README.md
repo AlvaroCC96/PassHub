@@ -12,7 +12,9 @@ per-user enablement, and feature flags fit together,
 [docs/drivepass-vehicles.md](docs/drivepass-vehicles.md) for DrivePass's
 vehicle management, and
 [docs/drivepass-documents.md](docs/drivepass-documents.md) for DrivePass's
-document management.
+document management, and
+[docs/intelligence-platform.md](docs/intelligence-platform.md) for the
+AI document-extraction engine.
 
 ## Requirements
 
@@ -56,7 +58,9 @@ Sign in at `/login` ("Continue with Google") and you'll land on `/app`, the
 platform dashboard — DrivePass is enabled by default for every new account.
 Open it at `/app/drive` to register, edit, favorite, and remove vehicles, and
 open a vehicle's "Documents" page to upload, replace, view, and remove its
-required/optional documents.
+required/optional documents. With `ai.document_extraction.enabled` turned on
+and `OPENAI_API_KEY` set, a document's detail page also offers "Analizar con
+IA" to extract structured metadata from the uploaded file.
 
 ## Architecture
 
@@ -79,6 +83,8 @@ PassHub/
           drivepass/
             vehicles/          vehicle CRUD, ownership, favorite, plate uniqueness
             documents/         file upload/versioning via StorageProvider, status, signed URLs
+            infrastructure/    intelligence_gateway.py — implements Intelligence's port
+          intelligence/        AI document-data extraction via AIProvider (OpenAI), confirm/reject flow
           README.md            how a future business module (drivepass/...) plugs in
   packages/
     shared/     TypeScript types shared across frontend apps
@@ -98,6 +104,8 @@ PassHub/
 **Database** — PostgreSQL
 **Storage** — MinIO locally, behind a `StorageProvider` port swappable for
 Google Cloud Storage without touching the domain
+**AI** — OpenAI (Responses API, Structured Outputs) behind an `AIProvider`
+port swappable for Gemini/Claude/local without touching the domain
 **Future infrastructure** — Cloud Run, Cloud SQL, Cloud Storage, Artifact
 Registry, Secret Manager, Cloud Monitoring/Logging, Cloud Scheduler
 **CI** — GitLab CI
@@ -123,14 +131,19 @@ make pre-commit-install   # install git hooks
 - **pytest** for the API (`apps/api/tests`) — unit tests for `UserModuleService`
   (enable/disable, COMING_SOON rejection, no duplicates, default module on
   signup), `VehicleService` (CRUD, ownership, plate uniqueness/reuse,
-  favorite invariant), and `VehicleDocumentService` (checklist
+  favorite invariant), `VehicleDocumentService` (checklist
   initialization, upload, rejected uploads, status derivation, conditional
-  homologation requirement, versioning, signed URLs, soft delete/recreate)
-  plus the Sprint 0 health-check integration test
+  homologation requirement, versioning, signed URLs, soft delete/recreate),
+  `DocumentExtractionService` (extraction success/failure, ownership
+  rejection, plate-mismatch warnings, confirm/reject, field overrides),
+  `DrivePassDocumentGateway` (VIN/expiration applied to a vehicle from a
+  confirmed homologación), and `AICostEstimator` (dated-model-snapshot
+  price matching) plus the Sprint 0 health-check integration test
 - **Vitest** + **React Testing Library** for the frontend (`apps/web/src`) —
   `ModuleCard`, `VehicleCard`, `VehicleForm`, `VehicleListPage`, the
-  DrivePass hub page, and `DocumentList`/`DocumentCard`/`EmptyDocumentsState`/
-  `DocumentUploadModal`
+  DrivePass hub page, `DocumentList`/`DocumentCard`/`EmptyDocumentsState`/
+  `DocumentUploadModal`, and `AIExtractionButton`/`AIExtractionResultPanel`
+  (rendered fields, warnings, editable-field confirm overrides)
 - **Playwright** scaffolding for end-to-end tests (`e2e/`), not yet written
 
 ## Roadmap
@@ -146,7 +159,10 @@ make pre-commit-install   # install git hooks
 - **Sprint 2 (this repository)** — DrivePass: vehicle registration, edit,
   soft delete, favorite, ownership enforcement — no documents yet
 - **Sprint 3** — DrivePass: document upload/storage on top of vehicles
-- **Sprint 4** — NFC-based access to vehicle documentation
-- **Sprint 5** — AI-powered document data extraction
+- **Sprint 4 (this repository)** — Intelligence Platform: AI-powered
+  document data extraction (`AIProvider`/OpenAI), confidence scoring,
+  manual confirm/reject with editable field overrides, cost tracking — no
+  OCR, no chatbot, no automatic analysis on upload
+- **Sprint 5** — NFC-based access to vehicle documentation
 - **Future modules** — HomePass, PetPass, FamilyPass, HealthPass, built on
   the same Platform Core

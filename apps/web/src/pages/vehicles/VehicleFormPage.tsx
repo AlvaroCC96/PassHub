@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ApiRequestError } from "@/lib/api-client";
 import { BackLink } from "@/components/BackLink";
 import { Loading } from "@/components/Loading";
+import { useConfirmDialog } from "@/components/useConfirmDialog";
 import { VehicleForm } from "@/components/VehicleForm";
 import { useCreateVehicle } from "@/vehicles/useCreateVehicle";
 import { useUpdateVehicle } from "@/vehicles/useUpdateVehicle";
@@ -16,10 +17,21 @@ export function VehicleFormPage() {
   const { vehicle, isLoading } = useVehicle(vehicleId);
   const createVehicle = useCreateVehicle();
   const updateVehicle = useUpdateVehicle(vehicleId ?? "");
+  const { confirm, dialog } = useConfirmDialog();
 
   const mutation = isEditing ? updateVehicle : createVehicle;
 
-  const handleSubmit = (values: VehicleInput) => {
+  const handleSubmit = async (values: VehicleInput) => {
+    // Only editing existing vehicle data asks for confirmation — creating a
+    // new vehicle has nothing to overwrite, so it submits directly.
+    if (isEditing) {
+      const ok = await confirm({
+        title: "Guardar cambios",
+        message: "¿Deseas guardar los cambios en los datos de este vehículo?",
+        confirmLabel: "Guardar cambios",
+      });
+      if (!ok) return;
+    }
     mutation.mutate(values, {
       onSuccess: (saved) => navigate(`/app/drive/vehicles/${saved.id}`),
     });
@@ -47,6 +59,7 @@ export function VehicleFormPage() {
           }
         />
       </div>
+      {dialog}
     </div>
   );
 }

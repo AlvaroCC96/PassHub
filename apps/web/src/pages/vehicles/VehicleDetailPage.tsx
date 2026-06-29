@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { BackLink } from "@/components/BackLink";
 import { Loading } from "@/components/Loading";
+import { useConfirmDialog } from "@/components/useConfirmDialog";
 import { VehicleHeader } from "@/components/VehicleHeader";
 import { useDeleteVehicle } from "@/vehicles/useDeleteVehicle";
 import { useSetFavoriteVehicle } from "@/vehicles/useSetFavoriteVehicle";
@@ -12,10 +13,17 @@ export function VehicleDetailPage() {
   const { vehicle, isLoading } = useVehicle(vehicleId);
   const setFavorite = useSetFavoriteVehicle();
   const deleteVehicle = useDeleteVehicle();
+  const { confirm, dialog } = useConfirmDialog();
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!vehicleId) return;
-    if (!window.confirm("Remove this vehicle? This can't be undone from the app.")) return;
+    const ok = await confirm({
+      title: "Eliminar vehículo",
+      message: "Esto no se puede deshacer desde la app. ¿Deseas continuar?",
+      confirmLabel: "Eliminar",
+      variant: "danger",
+    });
+    if (!ok) return;
     deleteVehicle.mutate(vehicleId, { onSuccess: () => navigate("/app/drive/vehicles") });
   };
 
@@ -61,6 +69,7 @@ export function VehicleDetailPage() {
           {deleteVehicle.isPending ? "Removing…" : "Remove"}
         </button>
       </div>
+      {dialog}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { DocumentStatusBadge } from "@/components/DocumentStatusBadge";
 import { DocumentUploadModal } from "@/components/DocumentUploadModal";
+import { useConfirmDialog } from "@/components/useConfirmDialog";
 import { useDeleteDocument } from "@/documents/useDeleteDocument";
 import { useDocumentDownloadUrl } from "@/documents/useDocumentDownloadUrl";
 
@@ -15,6 +16,7 @@ export function DocumentCard({ vehicleId, document }: DocumentCardProps) {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const downloadUrl = useDocumentDownloadUrl(vehicleId);
   const deleteDocument = useDeleteDocument(vehicleId);
+  const { confirm, dialog } = useConfirmDialog();
 
   const hasVersion = document.current_version_id !== null;
 
@@ -24,8 +26,14 @@ export function DocumentCard({ vehicleId, document }: DocumentCardProps) {
     });
   };
 
-  const handleDelete = () => {
-    if (!window.confirm(`Remove ${document.display_name}? You can upload it again later.`)) return;
+  const handleDelete = async () => {
+    const ok = await confirm({
+      title: "Eliminar documento",
+      message: `¿Eliminar ${document.display_name}? Podrás volver a subirlo más tarde.`,
+      confirmLabel: "Eliminar",
+      variant: "danger",
+    });
+    if (!ok) return;
     deleteDocument.mutate(document.id);
   };
 
@@ -87,6 +95,7 @@ export function DocumentCard({ vehicleId, document }: DocumentCardProps) {
         documentType={hasVersion ? undefined : document.document_type}
         documentId={hasVersion ? document.id : undefined}
       />
+      {dialog}
     </div>
   );
 }

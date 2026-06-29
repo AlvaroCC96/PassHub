@@ -64,6 +64,13 @@ class VehicleDocument(Entity):
     def set_required(self, is_required: bool) -> None:
         self.is_required = is_required
 
+    def update_dates(self, *, issue_date: date | None, expiration_date: date | None) -> None:
+        """Corrects `issue_date`/`expiration_date` without touching
+        `current_version_id` — used when confirmed AI-extracted metadata
+        only refines dates on a document that already has a file."""
+        self.issue_date = issue_date
+        self.expiration_date = expiration_date
+
     def attach_version(
         self,
         version_id: UUID,

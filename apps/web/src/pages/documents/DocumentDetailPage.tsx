@@ -1,13 +1,20 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { AIExtractionButton } from "@/components/AIExtractionButton";
+import { AIExtractionResultPanel } from "@/components/AIExtractionResultPanel";
 import { BackLink } from "@/components/BackLink";
 import { DocumentStatusBadge } from "@/components/DocumentStatusBadge";
 import { DocumentUploadModal } from "@/components/DocumentUploadModal";
 import { DocumentVersionList } from "@/components/DocumentVersionList";
 import { Loading } from "@/components/Loading";
+import { useConfirmDialog } from "@/components/useConfirmDialog";
 import { useDeleteDocument } from "@/documents/useDeleteDocument";
 import { useDocument } from "@/documents/useDocument";
 import { useDocumentDownloadUrl } from "@/documents/useDocumentDownloadUrl";
+import { useDocumentExtractions } from "@/intelligence/useDocumentExtractions";
+import { useFeatureFlag } from "@/platform/useFeatureFlags";
+
+const AI_EXTRACTION_FEATURE_FLAG = "ai.document_extraction.enabled";
 
 export function DocumentDetailPage() {
   const { vehicleId, documentId } = useParams<{ vehicleId: string; documentId: string }>();
@@ -16,14 +23,25 @@ export function DocumentDetailPage() {
   const downloadUrl = useDocumentDownloadUrl(vehicleId ?? "");
   const deleteDocument = useDeleteDocument(vehicleId ?? "");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const aiExtractionEnabled = useFeatureFlag(AI_EXTRACTION_FEATURE_FLAG);
+  const { extractions } = useDocumentExtractions(documentId ?? "");
+  const { confirm, dialog } = useConfirmDialog();
 
   if (isLoading) return <Loading />;
   if (!document || !vehicleId || !documentId) return null;
 
+  const latestExtraction = extractions[0];
+
   const hasVersion = document.current_version_id !== null;
 
-  const handleDelete = () => {
-    if (!window.confirm(`Remove ${document.display_name}?`)) return;
+  const handleDelete = async () => {
+    const ok = await confirm({
+      title: "Eliminar documento",
+      message: `¿Eliminar ${document.display_name}?`,
+      confirmLabel: "Eliminar",
+      variant: "danger",
+    });
+    if (!ok) return;
     deleteDocument.mutate(documentId, {
       onSuccess: () => navigate(`/app/drive/vehicles/${vehicleId}/documents`),
     });
@@ -87,6 +105,20 @@ export function DocumentDetailPage() {
         )}
       </div>
 
+      {aiExtractionEnabled && hasVersion && (
+        <section className="mt-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold">Análisis con IA</h2>
+            <AIExtractionButton documentId={documentId} hasExtraction={extractions.length > 0} />
+          </div>
+          {latestExtraction && (
+            <div className="mt-3">
+              <AIExtractionResultPanel extraction={latestExtraction} />
+            </div>
+          )}
+        </section>
+      )}
+
       <section className="mt-8">
         <h2 className="text-base font-semibold">Version history</h2>
         <div className="mt-3">
@@ -102,6 +134,7 @@ export function DocumentDetailPage() {
         documentType={hasVersion ? undefined : document.document_type}
         documentId={hasVersion ? documentId : undefined}
       />
+      {dialog}
     </div>
   );
 }

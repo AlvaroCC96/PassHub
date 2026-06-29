@@ -61,6 +61,24 @@ class SecuritySettings(BaseSettings):
     google_oauth_redirect_uri: str = "http://localhost:8000/api/v1/auth/callback"
 
 
+class AISettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="AI_")
+
+    #: Which `AIProvider` adapter the container binds. Only "openai" has a
+    #: real implementation today — "gemini"/"claude"/"local" are reserved
+    #: names for future adapters, not yet implemented.
+    provider: Literal["openai", "gemini", "claude", "local"] = "openai"
+    model: str = "gpt-4o-mini"
+    #: Deliberately not under the `AI_` prefix — `OPENAI_API_KEY` is the
+    #: conventional name every OpenAI-adjacent tool (SDKs, CLIs) looks for.
+    openai_api_key: str = Field(default="", validation_alias="OPENAI_API_KEY")
+    #: Hard ceiling so a single extraction can't run away on cost — applies
+    #: to the file sent to the provider, independent of the 10MB document
+    #: upload limit in `drivepass/documents`.
+    max_input_file_size_bytes: int = 15 * 1024 * 1024
+    request_timeout_seconds: int = 60
+
+
 class ObservabilitySettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="OTEL_")
 
@@ -89,6 +107,7 @@ class Settings(BaseSettings):
     storage: StorageSettings = Field(default_factory=StorageSettings)
     security: SecuritySettings = Field(default_factory=SecuritySettings)
     observability: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
+    ai: AISettings = Field(default_factory=AISettings)
 
 
 @lru_cache
