@@ -9,6 +9,9 @@ import { DrivePassPage } from "@/pages/DrivePassPage";
 import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/pages/LoginPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
+import { VehicleDetailPage } from "@/pages/vehicles/VehicleDetailPage";
+import { VehicleFormPage } from "@/pages/vehicles/VehicleFormPage";
+import { VehicleListPage } from "@/pages/vehicles/VehicleListPage";
 
 export const router = createBrowserRouter(
   [
@@ -24,6 +27,10 @@ export const router = createBrowserRouter(
           children: [
             { path: "/app", element: <DashboardPage /> },
             { path: "/app/drive", element: <DrivePassPage /> },
+            { path: "/app/drive/vehicles", element: <VehicleListPage /> },
+            { path: "/app/drive/vehicles/new", element: <VehicleFormPage /> },
+            { path: "/app/drive/vehicles/:vehicleId", element: <VehicleDetailPage /> },
+            { path: "/app/drive/vehicles/:vehicleId/edit", element: <VehicleFormPage /> },
           ],
         },
       ],

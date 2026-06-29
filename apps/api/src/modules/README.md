@@ -1,22 +1,27 @@
 # Modules
 
-Two modules exist today:
+Three modules exist today:
 
 - `identity/` — Google login, JWT sessions, refresh-token rotation.
 - `platform/` — the module catalog, per-user module enablement, feature
   flags, and platform settings. See [docs/platform-core.md](../../../../docs/platform-core.md).
+- `drivepass/` — the first **business** module, organized as a bounded
+  context with its own internal submodules (`vehicles/` today, `documents/`
+  in Sprint 3). See [docs/drivepass-vehicles.md](../../../../docs/drivepass-vehicles.md).
 
-Every future **business** module (`drivepass`, `homepass`, `petpass`,
-`familypass`, `healthpass`) is added here the same way, mirroring the same
+Every future business module (`homepass`, `petpass`, `familypass`,
+`healthpass`) is added the same way `drivepass` was, mirroring the same
 Clean Architecture split used by the shared kernel:
 
 ```
-modules/
-  drivepass/
-    domain/          # Vehicle, Document, etc. — entities specific to this module
-    application/      # use cases, module-specific ports/DTOs
-    infrastructure/   # ORM models, concrete repositories
-    presentation/     # FastAPI routers mounted under /api/v1/drivepass
+modules/drivepass/
+  presentation/router.py   # aggregates submodules under /api/v1/drivepass
+  vehicles/
+    domain/          # Vehicle, VehicleStatus, FuelType, Transmission
+    application/      # VehicleRepository (port), VehicleService
+    infrastructure/   # VehicleModel, SqlAlchemyVehicleRepository
+    presentation/     # schemas, dependencies, router (mounted at /vehicles)
+  documents/           # Sprint 3 — not built yet
 ```
 
 A module depends on `core`, `domain.base`, and `application.ports` from the
@@ -30,6 +35,5 @@ constructs `platform`'s `PlatformUserProvisioner` and passes it through the
 Modules are registered in `presentation/api/v1/__init__.py` by including
 their router, and (if they have stateless adapters) bound in the DI
 `Container` — see `identity/infrastructure/bindings.py` for an example.
-DrivePass itself is registered in the `platform_modules` catalog
-(`platform/infrastructure/seed.py`) as `ACTIVE`, but has no FastAPI router or
-business logic yet — only the placeholder frontend page at `/app/drive`.
+`drivepass` is registered both as a router (`/api/v1/drivepass`) and in the
+`platform_modules` catalog (`platform/infrastructure/seed.py`) as `ACTIVE`.

@@ -10,6 +10,7 @@ from src.infrastructure.database.base import Base
 # Each module's ORM models must be imported here so Alembic's autogenerate
 # sees them on `Base.metadata` — importing the package alone isn't enough,
 # the model classes have to actually execute.
+from src.modules.drivepass.vehicles.infrastructure import models as vehicle_models  # noqa: F401
 from src.modules.identity.infrastructure import models as identity_models  # noqa: F401
 from src.modules.platform.infrastructure import models as platform_models  # noqa: F401
 

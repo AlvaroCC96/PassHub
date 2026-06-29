@@ -7,8 +7,10 @@ HealthPass, FamilyPass) plug into the same core without it knowing anything
 about vehicles, pets, or houses.
 
 See [docs/architecture.md](docs/architecture.md) for the Sprint 0 scaffold
-rationale and [docs/platform-core.md](docs/platform-core.md) for how modules,
-per-user enablement, and feature flags fit together.
+rationale, [docs/platform-core.md](docs/platform-core.md) for how modules,
+per-user enablement, and feature flags fit together, and
+[docs/drivepass-vehicles.md](docs/drivepass-vehicles.md) for DrivePass's
+vehicle management.
 
 ## Requirements
 
@@ -49,8 +51,8 @@ Once running:
 | PgAdmin       | http://localhost:5050                |
 
 Sign in at `/login` ("Continue with Google") and you'll land on `/app`, the
-platform dashboard — DrivePass is enabled by default for every new account
-and opens a placeholder at `/app/drive`.
+platform dashboard — DrivePass is enabled by default for every new account.
+Open it at `/app/drive` to register, edit, favorite, and remove vehicles.
 
 ## Architecture
 
@@ -70,6 +72,8 @@ PassHub/
         modules/
           identity/            Google login, JWT sessions, refresh tokens
           platform/            module catalog, per-user enablement, feature flags, settings
+          drivepass/
+            vehicles/          vehicle CRUD, ownership, favorite, plate uniqueness
           README.md            how a future business module (drivepass/...) plugs in
   packages/
     shared/     TypeScript types shared across frontend apps
@@ -112,10 +116,12 @@ make pre-commit-install   # install git hooks
 ## Testing
 
 - **pytest** for the API (`apps/api/tests`) — unit tests for `UserModuleService`
-  business rules (enable/disable, COMING_SOON rejection, no duplicates, default
-  module on signup) plus the Sprint 0 health-check integration test
+  (enable/disable, COMING_SOON rejection, no duplicates, default module on
+  signup) and `VehicleService` (CRUD, ownership, plate uniqueness/reuse,
+  favorite invariant) plus the Sprint 0 health-check integration test
 - **Vitest** + **React Testing Library** for the frontend (`apps/web/src`) —
-  `ModuleCard` and the DrivePass placeholder page
+  `ModuleCard`, `VehicleCard`, `VehicleForm`, `VehicleListPage`, and the
+  DrivePass hub page
 - **Playwright** scaffolding for end-to-end tests (`e2e/`), not yet written
 
 ## Roadmap
@@ -124,12 +130,14 @@ make pre-commit-install   # install git hooks
   CI structure, no business logic
 - **Sprint 1** — Identity: Google OAuth login, JWT access tokens, rotated
   refresh tokens, basic dashboard
-- **Sprint 1.5 (this repository)** — Platform Core: module catalog, per-user
-  module enablement, feature flags, platform settings, DrivePass shown as a
-  module (not the app), HomePass/PetPass/HealthPass/FamilyPass as
-  coming-soon placeholders
-- **Sprint 2** — DrivePass: vehicles, document upload/storage
-- **Sprint 3** — NFC-based access to vehicle documentation
-- **Sprint 4** — AI-powered document data extraction
+- **Sprint 1.5** — Platform Core: module catalog, per-user module
+  enablement, feature flags, platform settings, DrivePass shown as a module
+  (not the app), HomePass/PetPass/HealthPass/FamilyPass as coming-soon
+  placeholders
+- **Sprint 2 (this repository)** — DrivePass: vehicle registration, edit,
+  soft delete, favorite, ownership enforcement — no documents yet
+- **Sprint 3** — DrivePass: document upload/storage on top of vehicles
+- **Sprint 4** — NFC-based access to vehicle documentation
+- **Sprint 5** — AI-powered document data extraction
 - **Future modules** — HomePass, PetPass, FamilyPass, HealthPass, built on
   the same Platform Core
