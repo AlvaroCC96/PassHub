@@ -34,3 +34,10 @@ class UnauthorizedError(ApplicationError):
 class ForbiddenError(ApplicationError):
     status_code = 403
     error_code = "forbidden"
+
+
+class LockedError(ApplicationError):
+    """423 Locked — resource is temporarily locked (e.g. too many failed PIN attempts)."""
+
+    status_code = 423
+    error_code = "locked"

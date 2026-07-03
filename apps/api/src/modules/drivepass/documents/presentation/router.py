@@ -14,6 +14,7 @@ from src.modules.drivepass.documents.presentation.schemas import (
     DocumentStatusSummaryResponse,
     DocumentVersionResponse,
     DownloadUrlResponse,
+    SetVisibilityRequest,
     VehicleDocumentResponse,
 )
 from src.modules.drivepass.vehicles.domain.entities import Vehicle
@@ -132,6 +133,23 @@ async def get_download_url(
         vehicle_id=vehicle.id, document_id=document_id
     )
     return DownloadUrlResponse(url=url, expires_in=expires_in)
+
+
+@router.patch("/{document_id}/visibility", response_model=VehicleDocumentResponse)
+async def set_document_visibility(
+    document_id: UUID,
+    body: SetVisibilityRequest,
+    vehicle: Vehicle = Depends(get_owned_vehicle),
+    document_service: VehicleDocumentService = Depends(get_vehicle_document_service),
+    session: AsyncSession = Depends(get_db_session),
+) -> VehicleDocumentResponse:
+    document = await document_service.set_visibility(
+        vehicle_id=vehicle.id,
+        document_id=document_id,
+        visibility=body.visibility,
+    )
+    await session.commit()
+    return VehicleDocumentResponse.from_domain(document)
 
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)

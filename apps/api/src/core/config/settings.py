@@ -87,6 +87,16 @@ class ObservabilitySettings(BaseSettings):
     exporter_endpoint: str | None = None
 
 
+class PublicAccessSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="PUBLIC_")
+
+    portal_base_url: str = "http://localhost:5173"
+    session_duration_minutes: int = 10
+    signed_url_duration_minutes: int = 5
+    max_failed_attempts: int = 5
+    lockout_minutes: int = 15
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -108,6 +118,11 @@ class Settings(BaseSettings):
     security: SecuritySettings = Field(default_factory=SecuritySettings)
     observability: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
     ai: AISettings = Field(default_factory=AISettings)
+    public_access: PublicAccessSettings = Field(default_factory=PublicAccessSettings)
+
+    @property
+    def is_production(self) -> bool:
+        return self.environment == "production"
 
 
 @lru_cache

@@ -189,6 +189,21 @@ class VehicleDocumentService:
         )
         return url, DOWNLOAD_URL_EXPIRY_SECONDS
 
+    async def set_visibility(
+        self, *, vehicle_id: UUID, document_id: UUID, visibility: DocumentVisibility
+    ) -> VehicleDocument:
+        document = await self.get_document(vehicle_id=vehicle_id, document_id=document_id)
+        document.set_visibility(visibility)
+        await self._documents.save(document)
+        logger.info(
+            "document_visibility_changed",
+            category="drivepass.audit",
+            vehicle_id=str(vehicle_id),
+            document_id=str(document_id),
+            visibility=visibility.value,
+        )
+        return document
+
     async def delete(self, *, vehicle_id: UUID, document_id: UUID) -> None:
         document = await self.get_document(vehicle_id=vehicle_id, document_id=document_id)
         await self._documents.soft_delete(document)

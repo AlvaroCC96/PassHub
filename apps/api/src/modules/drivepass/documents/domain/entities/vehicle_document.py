@@ -64,6 +64,9 @@ class VehicleDocument(Entity):
     def set_required(self, is_required: bool) -> None:
         self.is_required = is_required
 
+    def set_visibility(self, visibility: DocumentVisibility) -> None:
+        self.visibility = visibility
+
     def update_dates(self, *, issue_date: date | None, expiration_date: date | None) -> None:
         """Corrects `issue_date`/`expiration_date` without touching
         `current_version_id` — used when confirmed AI-extracted metadata

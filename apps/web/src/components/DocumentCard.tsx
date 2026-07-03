@@ -1,4 +1,4 @@
-import type { VehicleDocument } from "@passhub/shared";
+import { DocumentVisibility, type VehicleDocument } from "@passhub/shared";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { DocumentStatusBadge } from "@/components/DocumentStatusBadge";
@@ -6,6 +6,7 @@ import { DocumentUploadModal } from "@/components/DocumentUploadModal";
 import { useConfirmDialog } from "@/components/useConfirmDialog";
 import { useDeleteDocument } from "@/documents/useDeleteDocument";
 import { useDocumentDownloadUrl } from "@/documents/useDocumentDownloadUrl";
+import { useSetDocumentVisibility } from "@/documents/useSetDocumentVisibility";
 
 interface DocumentCardProps {
   vehicleId: string;
@@ -16,9 +17,18 @@ export function DocumentCard({ vehicleId, document }: DocumentCardProps) {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const downloadUrl = useDocumentDownloadUrl(vehicleId);
   const deleteDocument = useDeleteDocument(vehicleId);
+  const setVisibility = useSetDocumentVisibility(vehicleId);
   const { confirm, dialog } = useConfirmDialog();
 
   const hasVersion = document.current_version_id !== null;
+  const isPublic = document.visibility === DocumentVisibility.PublicAfterPin;
+
+  const handleToggleVisibility = () => {
+    setVisibility.mutate({
+      documentId: document.id,
+      visibility: isPublic ? DocumentVisibility.Private : DocumentVisibility.PublicAfterPin,
+    });
+  };
 
   const handleView = () => {
     downloadUrl.mutate(document.id, {
@@ -50,6 +60,27 @@ export function DocumentCard({ vehicleId, document }: DocumentCardProps) {
         </div>
         <DocumentStatusBadge status={document.status} />
       </div>
+
+      {/* Visibility toggle */}
+      <button
+        type="button"
+        onClick={handleToggleVisibility}
+        disabled={setVisibility.isPending}
+        title={isPublic ? "Visible en portal público. Click para hacer privado." : "Solo visible por ti. Click para compartir en portal público."}
+        className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${
+          isPublic
+            ? "bg-brand-50 text-brand-700 hover:bg-brand-100 dark:bg-brand-900/30 dark:text-brand-400 dark:hover:bg-brand-900/50"
+            : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+        }`}
+      >
+        {setVisibility.isPending ? (
+          "…"
+        ) : isPublic ? (
+          <>🌐 Portal público</>
+        ) : (
+          <>🔒 Solo yo</>
+        )}
+      </button>
 
       {document.expiration_date && (
         <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">

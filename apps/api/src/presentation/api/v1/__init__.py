@@ -4,6 +4,7 @@ from src.modules.drivepass.presentation.router import router as drivepass_router
 from src.modules.identity.presentation.router import router as identity_router
 from src.modules.intelligence.presentation.router import router as intelligence_router
 from src.modules.platform.presentation.router import router as platform_router
+from src.modules.public_access.presentation.public_router import router as public_drive_router
 from src.presentation.api.v1.health import router as health_router
 
 api_v1_router = APIRouter()
@@ -12,6 +13,9 @@ api_v1_router.include_router(identity_router, prefix="/auth", tags=["identity"])
 api_v1_router.include_router(platform_router, prefix="/platform", tags=["platform"])
 api_v1_router.include_router(drivepass_router, prefix="/drivepass", tags=["drivepass"])
 api_v1_router.include_router(intelligence_router, prefix="/intelligence", tags=["intelligence"])
+api_v1_router.include_router(
+    public_drive_router, prefix="/public/drive/{public_token}", tags=["public-access-portal"]
+)
 
 # Future modules register their routers here, e.g.:
 # from src.modules.homepass.presentation.router import router as homepass_router

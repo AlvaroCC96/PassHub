@@ -15,6 +15,7 @@ from src.modules.drivepass.vehicles.infrastructure import models as vehicle_mode
 from src.modules.identity.infrastructure import models as identity_models  # noqa: F401
 from src.modules.intelligence.infrastructure import models as intelligence_models  # noqa: F401
 from src.modules.platform.infrastructure import models as platform_models  # noqa: F401
+from src.modules.public_access.infrastructure import models as public_access_models  # noqa: F401
 
 config = context.config
 

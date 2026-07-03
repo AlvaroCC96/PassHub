@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { BackLink } from "@/components/BackLink";
 import { Loading } from "@/components/Loading";
+import { PublicAccessCard } from "@/components/PublicAccessCard";
 import { useConfirmDialog } from "@/components/useConfirmDialog";
 import { VehicleHeader } from "@/components/VehicleHeader";
 import { useDeleteVehicle } from "@/vehicles/useDeleteVehicle";
@@ -46,6 +47,8 @@ export function VehicleDetailPage() {
         <Detail label="Fuel type" value={vehicle.fuel_type} />
         <Detail label="Transmission" value={vehicle.transmission} />
       </dl>
+
+      <PublicAccessCard vehicleId={vehicle.id} />
 
       <div className="mt-8 flex gap-3">
         <Link

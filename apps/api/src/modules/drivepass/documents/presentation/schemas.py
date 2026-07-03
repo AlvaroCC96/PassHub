@@ -62,6 +62,10 @@ class DocumentStatusSummaryResponse(BaseModel):
         )
 
 
+class SetVisibilityRequest(BaseModel):
+    visibility: DocumentVisibility
+
+
 class DownloadUrlResponse(BaseModel):
     url: str
     expires_in: int
