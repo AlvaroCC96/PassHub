@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api-client";
+import { getPublicSessionToken, PUBLIC_SESSION_HEADER } from "./session";
 import type {
   DownloadUrlResponse,
   PublicAccessConfig,
@@ -7,6 +8,11 @@ import type {
   PublicVehicleInfo,
   VerifyPinResponse,
 } from "./types";
+
+function publicSessionHeaders(): Record<string, string> {
+  const token = getPublicSessionToken();
+  return token ? { [PUBLIC_SESSION_HEADER]: token } : {};
+}
 
 // ── Private endpoints (auth required) ────────────────────────────────────────
 
@@ -68,7 +74,9 @@ export function fetchVerifyPin(publicToken: string, pin: string) {
 }
 
 export function fetchPublicDocuments(publicToken: string) {
-  return apiFetch<PublicDocument[]>(`/public/drive/${publicToken}/documents`);
+  return apiFetch<PublicDocument[]>(`/public/drive/${publicToken}/documents`, {
+    headers: publicSessionHeaders(),
+  });
 }
 
 export function fetchDocumentDownloadUrl(
@@ -77,11 +85,13 @@ export function fetchDocumentDownloadUrl(
 ) {
   return apiFetch<DownloadUrlResponse>(
     `/public/drive/${publicToken}/documents/${documentId}/download-url`,
+    { headers: publicSessionHeaders() },
   );
 }
 
 export function fetchLogoutPublicSession(publicToken: string) {
   return apiFetch<void>(`/public/drive/${publicToken}/logout`, {
     method: "POST",
+    headers: publicSessionHeaders(),
   });
 }

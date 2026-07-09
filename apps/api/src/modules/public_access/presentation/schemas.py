@@ -66,6 +66,7 @@ class VerifyPinRequest(BaseModel):
 class VerifyPinResponse(BaseModel):
     authenticated: bool
     expires_in: int
+    session_token: str  # for mobile/Safari: stored in sessionStorage, sent as X-Public-Session header
 
 
 class VehiclePublicInfoResponse(BaseModel):

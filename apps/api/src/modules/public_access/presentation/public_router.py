@@ -90,6 +90,7 @@ async def verify_pin(
     return VerifyPinResponse(
         authenticated=True,
         expires_in=session_duration_seconds,
+        session_token=raw_token,
     )
 
 

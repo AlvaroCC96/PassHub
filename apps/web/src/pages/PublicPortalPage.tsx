@@ -8,6 +8,7 @@ import { PublicDocumentCard } from "@/components/PublicDocumentCard";
 import { PublicVehicleCard } from "@/components/PublicVehicleCard";
 import { SessionExpiredDialog } from "@/components/SessionExpiredDialog";
 import { ApiRequestError } from "@/lib/api-client";
+import { clearPublicSessionToken, storePublicSessionToken } from "@/public-access/session";
 import { useDownloadDocument } from "@/public-access/hooks/useDownloadDocument";
 import { useLogoutPublicSession } from "@/public-access/hooks/useLogoutPublicSession";
 import { usePublicDocuments } from "@/public-access/hooks/usePublicDocuments";
@@ -68,7 +69,8 @@ export function PublicPortalPage() {
     if (!publicToken) return;
     setPinError(null);
     verifyPin.mutate(submittedPin, {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        storePublicSessionToken(data.session_token);
         setPin("");
         setView("documents");
       },
@@ -105,6 +107,7 @@ export function PublicPortalPage() {
   const handleLogout = () => {
     logout.mutate(undefined, {
       onSettled: () => {
+        clearPublicSessionToken();
         setPin("");
         setPinError(null);
         setView("pin");

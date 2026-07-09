@@ -150,9 +150,10 @@ async def get_authenticated_public_session(
     access: VehiclePublicAccess = Depends(get_active_public_access),
     session_service: PublicSessionService = Depends(get_public_session_service),
 ) -> PublicSession:
-    """Validates the public session cookie for endpoints that require a PIN
-    to have been verified first.  Returns 401 if missing/expired/revoked."""
-    raw_token = get_raw_session_token(request)
+    """Validates the public session. Accepts the token from the X-Public-Session
+    header (used by mobile/Safari where cross-origin cookies are blocked) or
+    from the HttpOnly cookie (desktop browsers)."""
+    raw_token = request.headers.get("x-public-session") or get_raw_session_token(request)
     if raw_token is None:
         raise UnauthorizedError("Session required", error_code="session_required")
     session = await session_service.validate(raw_token=raw_token)

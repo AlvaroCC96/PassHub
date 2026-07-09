@@ -32,6 +32,7 @@ export interface PublicDocument {
 export interface VerifyPinResponse {
   authenticated: boolean;
   expires_in: number; // seconds
+  session_token: string;
 }
 
 export interface DownloadUrlResponse {
