@@ -5,7 +5,7 @@ import google.auth
 import google.auth.transport.requests
 from google.cloud import storage as gcs
 
-from src.application.ports import StorageObject, StorageProvider
+from src.application.ports import StorageObject
 from src.core.config import Settings
 
 
