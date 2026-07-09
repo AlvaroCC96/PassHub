@@ -24,4 +24,4 @@ EXPOSE 8080
 
 USER appuser
 
-CMD ["sh", "-c", "uv run uvicorn src.presentation.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+CMD ["sh", "-c", "/app/.venv/bin/uvicorn src.presentation.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
