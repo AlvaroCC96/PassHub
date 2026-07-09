@@ -3,14 +3,16 @@ import { createContext, useCallback, useEffect, useMemo, useState, type ReactNod
 import { apiFetch, ApiRequestError } from "@/lib/api-client";
 import { setAccessToken } from "@/lib/auth-token-store";
 import { CSRF_HEADER_NAME, getCsrfToken, storeCsrfToken, extractCsrfFromHash } from "@/lib/csrf";
-import type { AccessTokenResponse, LoginInitiateResponse } from "@/auth/types";
+import type { AccessTokenResponse } from "@/auth/types";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
 export interface AuthContextValue {
   status: AuthStatus;
   user: CurrentUser | null;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: () => void;
   /** Bootstraps a session from the HttpOnly refresh-token cookie. Used both
    * on app mount (to survive a page reload) and by the OAuth callback page
    * (to mint the first access token after Google redirects back). */
@@ -56,11 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void restoreSession();
   }, [restoreSession]);
 
-  const loginWithGoogle = useCallback(async () => {
-    const { authorization_url } = await apiFetch<LoginInitiateResponse>("/auth/login", {
-      method: "POST",
-    });
-    window.location.href = authorization_url;
+  const loginWithGoogle = useCallback(() => {
+    // Navigate directly to GET /auth/login (first-party navigation to the API).
+    // This ensures the oauth_state cookie is stored without third-party cookie
+    // restrictions that Chrome applies to cookies set via cross-origin fetch.
+    window.location.href = `${API_BASE}/auth/login`;
   }, []);
 
   const logout = useCallback(async () => {

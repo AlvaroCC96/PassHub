@@ -1,3 +1,4 @@
+import asyncio
 from datetime import timedelta
 from typing import BinaryIO
 
@@ -45,7 +46,7 @@ class GoogleCloudStorageProvider:
         target_bucket = self._resolve_bucket(bucket)
         payload = data.read()
         blob = self._client.bucket(target_bucket).blob(key)
-        blob.upload_from_string(payload, content_type=content_type)
+        await asyncio.to_thread(blob.upload_from_string, payload, content_type=content_type)
         return StorageObject(
             key=key,
             bucket=target_bucket,
@@ -55,11 +56,11 @@ class GoogleCloudStorageProvider:
 
     async def download(self, *, key: str, bucket: str | None = None) -> bytes:
         blob = self._client.bucket(self._resolve_bucket(bucket)).blob(key)
-        return blob.download_as_bytes()
+        return await asyncio.to_thread(blob.download_as_bytes)
 
     async def delete(self, *, key: str, bucket: str | None = None) -> None:
         blob = self._client.bucket(self._resolve_bucket(bucket)).blob(key)
-        blob.delete()
+        await asyncio.to_thread(blob.delete)
 
     async def get_presigned_url(
         self, *, key: str, bucket: str | None = None, expires_in_seconds: int = 3600
@@ -69,7 +70,7 @@ class GoogleCloudStorageProvider:
         # Refresh credentials so the access token used for signing is current.
         # On Cloud Run this hits the metadata server; locally it uses the key file.
         auth_request = google.auth.transport.requests.Request()
-        self._credentials.refresh(auth_request)
+        await asyncio.to_thread(self._credentials.refresh, auth_request)
 
         # V4 signed URLs require either a service account key (signing happens
         # locally) or a valid access_token + service_account_email pair so GCS
@@ -77,7 +78,8 @@ class GoogleCloudStorageProvider:
         sa_email = getattr(self._credentials, "service_account_email", None)
         access_token = getattr(self._credentials, "token", None)
 
-        return blob.generate_signed_url(
+        return await asyncio.to_thread(
+            blob.generate_signed_url,
             expiration=timedelta(seconds=expires_in_seconds),
             version="v4",
             method="GET",

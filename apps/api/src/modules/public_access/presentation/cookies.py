@@ -19,7 +19,7 @@ def set_public_session_cookie(
         max_age=max_age,
         httponly=True,
         secure=is_secure,
-        samesite="lax",
+        samesite="none" if is_secure else "lax",
         path=_COOKIE_PATH,
     )
 

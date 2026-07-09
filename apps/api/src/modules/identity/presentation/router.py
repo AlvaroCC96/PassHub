@@ -51,15 +51,29 @@ async def login(
     settings: Settings = Depends(get_settings),
     oauth_provider: OAuthProvider = Depends(get_oauth_provider),
 ) -> LoginInitiateResponse:
-    """Starts the Google sign-in flow. Returns the URL the SPA should redirect
-    the browser to; the `state` value is also stashed in a short-lived
-    HttpOnly cookie so `/auth/callback` can confirm the redirect wasn't
-    forged (OAuth CSRF protection)."""
+    """Kept for backwards compat. Prefer GET /auth/login."""
     state = secrets.token_urlsafe(24)
     set_oauth_state_cookie(response, settings=settings, state=state)
     return LoginInitiateResponse(
         authorization_url=oauth_provider.get_authorization_url(state=state)
     )
+
+
+@router.get("/login")
+async def login_redirect(
+    settings: Settings = Depends(get_settings),
+    oauth_provider: OAuthProvider = Depends(get_oauth_provider),
+) -> RedirectResponse:
+    """Browser-navigation path: SPA sets window.location.href to this URL.
+    Being a first-party navigation, the browser stores the state cookie on
+    the API domain without cross-site third-party cookie restrictions."""
+    state = secrets.token_urlsafe(24)
+    redirect = RedirectResponse(
+        url=oauth_provider.get_authorization_url(state=state),
+        status_code=status.HTTP_302_FOUND,
+    )
+    set_oauth_state_cookie(redirect, settings=settings, state=state)
+    return redirect
 
 
 @router.get("/callback")
