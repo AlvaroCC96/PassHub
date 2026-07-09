@@ -2,7 +2,7 @@ import type { CurrentUser } from "@passhub/shared";
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { apiFetch, ApiRequestError } from "@/lib/api-client";
 import { setAccessToken } from "@/lib/auth-token-store";
-import { CSRF_HEADER_NAME, getCsrfToken } from "@/lib/csrf";
+import { CSRF_HEADER_NAME, getCsrfToken, storeCsrfToken, extractCsrfFromHash } from "@/lib/csrf";
 import type { AccessTokenResponse, LoginInitiateResponse } from "@/auth/types";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: "POST",
         headers: csrfToken ? { [CSRF_HEADER_NAME]: csrfToken } : {},
       });
+      storeCsrfToken(tokens.csrf_token);
       setAccessToken(tokens.access_token);
       const currentUser = await fetchCurrentUser();
       setUser(currentUser);
@@ -49,6 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // On the OAuth callback page the initial CSRF token arrives in the URL
+    // hash (#csrf=...). Extract and cache it before the first refresh call.
+    extractCsrfFromHash();
     void restoreSession();
   }, [restoreSession]);
 

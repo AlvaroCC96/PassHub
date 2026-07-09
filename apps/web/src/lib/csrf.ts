@@ -1,10 +1,23 @@
-const CSRF_COOKIE_NAME = "ph_csrf_token";
+const SESSION_KEY = "ph_csrf_token";
 export const CSRF_HEADER_NAME = "X-CSRF-Token";
 
-/** Reads the non-HttpOnly CSRF cookie the backend pairs with the refresh-token
- * cookie. Echoed back as a header on `/auth/refresh` and `/auth/logout` —
- * the "double submit cookie" CSRF defense. */
 export function getCsrfToken(): string | null {
-  const match = document.cookie.match(new RegExp(`(?:^|; )${CSRF_COOKIE_NAME}=([^;]*)`));
-  return match?.[1] ? decodeURIComponent(match[1]) : null;
+  return sessionStorage.getItem(SESSION_KEY);
+}
+
+export function storeCsrfToken(token: string): void {
+  sessionStorage.setItem(SESSION_KEY, token);
+}
+
+/** On the OAuth callback page the API passes the initial CSRF token as a URL
+ * fragment (#csrf=...) since the SPA can't read cross-origin cookies.
+ * Call this once on mount, then clear the fragment from the browser URL. */
+export function extractCsrfFromHash(): string | null {
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const token = params.get("csrf");
+  if (token) {
+    storeCsrfToken(token);
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+  }
+  return token;
 }

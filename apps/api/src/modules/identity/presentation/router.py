@@ -104,11 +104,18 @@ async def callback(
     result = await use_case.execute(code=code)
     await session.commit()
 
-    set_session_cookies(
+    csrf_token = set_session_cookies(
         redirect,
         settings=settings,
         refresh_token_value=result.tokens.refresh_token_value,
         max_age=result.tokens.refresh_token_expires_in,
+    )
+    # Pass the CSRF token in the URL fragment so the SPA can bootstrap it
+    # without having to read cross-origin cookies (which browsers block).
+    # Fragments are never sent to the server and are stripped from history
+    # by the callback page via history.replaceState().
+    redirect.headers["location"] = (
+        f"{settings.frontend_url}/auth/callback#csrf={csrf_token}"
     )
     return redirect
 
@@ -143,14 +150,16 @@ async def refresh(
     tokens = await use_case.execute(token_value=token_value)
     await session.commit()
 
-    set_session_cookies(
+    csrf_token = set_session_cookies(
         response,
         settings=settings,
         refresh_token_value=tokens.refresh_token_value,
         max_age=tokens.refresh_token_expires_in,
     )
     return AccessTokenResponse(
-        access_token=tokens.access_token, expires_in=tokens.access_token_expires_in
+        access_token=tokens.access_token,
+        expires_in=tokens.access_token_expires_in,
+        csrf_token=csrf_token,
     )
 
 

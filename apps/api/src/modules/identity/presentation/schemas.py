@@ -14,6 +14,9 @@ class AccessTokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: int
+    # Included so cross-origin SPAs can read and echo it back as X-CSRF-Token
+    # header — document.cookie is unavailable across origins.
+    csrf_token: str
 
 
 class CurrentUserResponse(BaseModel):

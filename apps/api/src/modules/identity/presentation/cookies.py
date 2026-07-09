@@ -16,13 +16,18 @@ def set_session_cookies(
     """Sets the HttpOnly refresh-token cookie plus a paired, JS-readable CSRF
     cookie. Returns the new CSRF token so callers needing it can use it too."""
     is_secure = settings.environment != "development"
+    # In production the frontend and API are on different origins (*.run.app
+    # subdomains). SameSite=None (requires Secure) allows cross-origin POST
+    # requests (e.g. /auth/refresh from the SPA) to include these cookies.
+    # In development both services share localhost so Lax is fine.
+    samesite: str = "none" if is_secure else "lax"
     response.set_cookie(
         REFRESH_TOKEN_COOKIE,
         refresh_token_value,
         max_age=max_age,
         httponly=True,
         secure=is_secure,
-        samesite="lax",
+        samesite=samesite,
         path="/api/v1/auth",
     )
     csrf_token = secrets.token_urlsafe(32)
@@ -32,7 +37,7 @@ def set_session_cookies(
         max_age=max_age,
         httponly=False,
         secure=is_secure,
-        samesite="lax",
+        samesite=samesite,
         # Path scoping for cookie *visibility to JS* is matched against the
         # current document's path, not the path of whatever request the
         # script later makes. The frontend lives at /login, /dashboard,
