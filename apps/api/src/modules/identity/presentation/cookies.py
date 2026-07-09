@@ -1,7 +1,8 @@
 import secrets
+from typing import Annotated
 
-from fastapi import Request, Response
-from src.core.config import Settings
+from fastapi import Depends, Request, Response
+from src.core.config import Settings, get_settings
 from src.core.exceptions import ForbiddenError
 
 REFRESH_TOKEN_COOKIE = "ph_refresh_token"
@@ -73,11 +74,27 @@ def pop_oauth_state_cookie(request: Request, response: Response) -> str | None:
     return state
 
 
-def verify_csrf(request: Request) -> None:
-    """Double-submit cookie check for cookie-authenticated, state-changing
-    endpoints (`/auth/refresh`, `/auth/logout`). The header must echo the
-    value of the non-HttpOnly CSRF cookie — a cross-site form/script cannot
-    read that cookie to forge a matching header."""
+def verify_csrf(
+    request: Request,
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> None:
+    """CSRF protection via Origin header validation (preferred) with
+    double-submit cookie fallback for direct/non-browser requests.
+
+    Cross-origin browser requests always include `Origin`. If it matches
+    the allowed web frontend, CORS policy already guarantees the request
+    came from our SPA — no additional token needed. This lets the SPA
+    call `/auth/refresh` from a fresh tab where sessionStorage is empty.
+
+    For direct requests (curl, server-side, Swagger UI) `Origin` is absent;
+    we fall back to the double-submit cookie pattern."""
+    origin = request.headers.get("origin")
+    if origin:
+        if origin in settings.cors_origins:
+            return  # Allowed origin — CORS enforces CSRF protection
+        raise ForbiddenError("Invalid request origin", error_code="csrf_validation_failed")
+
+    # No Origin header: non-browser request — require double-submit cookie.
     cookie_value = request.cookies.get(CSRF_COOKIE)
     header_value = request.headers.get(CSRF_HEADER)
     if not cookie_value or not header_value or cookie_value != header_value:
