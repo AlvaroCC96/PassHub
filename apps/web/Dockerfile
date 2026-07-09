@@ -22,9 +22,16 @@ EXPOSE 5173
 CMD ["pnpm", "--filter", "@passhub/web", "dev", "--host"]
 
 FROM base AS build
+# Baked at build time — Vite replaces import.meta.env.VITE_* at bundle time.
+# Pass --build-arg VITE_API_BASE_URL=https://passhub-api-xxx.run.app/api/v1
+ARG VITE_API_BASE_URL=http://localhost:8000/api/v1
+ARG VITE_APP_NAME=PassHub
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_APP_NAME=${VITE_APP_NAME}
 RUN pnpm --filter @passhub/web build
 
 FROM nginx:1.27-alpine AS runtime
 COPY --from=build /workspace/apps/web/dist /usr/share/nginx/html
 COPY infra/docker/nginx/default.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+# Cloud Run requires port 8080
+EXPOSE 8080
