@@ -13,9 +13,15 @@ class DatabaseSettings(BaseSettings):
     user: str = "passhub"
     password: str = "passhub"
     db: str = "passhub"
+    # Full URL override — takes precedence when set.
+    # Cloud Run + Cloud SQL Unix socket:
+    #   DATABASE_URL=postgresql+asyncpg://user:pass@/db?host=/cloudsql/PROJECT:REGION:INSTANCE
+    url_override: str | None = Field(default=None, validation_alias="DATABASE_URL")
 
     @property
     def url(self) -> str:
+        if self.url_override:
+            return self.url_override
         return f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
 
 
